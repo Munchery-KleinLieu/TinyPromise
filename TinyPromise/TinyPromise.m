@@ -142,13 +142,14 @@
 
   [self resumeQueues];
   
-  if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
-  {    
-    //dispatch_group_wait is far from infallible when
-    //blocks may be added and/or destroyed on different
-    //threads.
-    if ( [self pendingCompletionBlocks] )
-    {
+  //dispatch_group_wait is far from infallible when
+  //blocks may be added and/or destroyed on different
+  //threads. Only get GCD involved if it's genuinely
+  //necessary to try and let something finish.
+  if ( [self pendingCompletionBlocks] )
+  {
+    if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
+    {    
       [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with active jobs. You're probably going to crash. %@", self];
     }
   }
