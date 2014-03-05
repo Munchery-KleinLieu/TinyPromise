@@ -6,15 +6,19 @@
 
 //The resolution queue runs on resolution only
 @property (nonatomic) dispatch_queue_t            resolutionQueue;
+@property (atomic) UInt32                         resolutionManifest;
 
 //The rejection queue runs on rejection only
 @property (nonatomic) dispatch_queue_t            rejectionQueue;
+@property (atomic) UInt32                         rejectionManifest;
 
 //The always queue runs on resolution or rejection
 @property (nonatomic) dispatch_queue_t            alwaysQueue;
+@property (atomic) UInt32                         alwaysManifest;
 
 //The death queue runs on resolution, rejection and destruction
 @property (nonatomic) dispatch_queue_t            deathQueue;
+@property (atomic) UInt32                         deathManifest;
 
 @property BOOL                                    suspended;
 
@@ -24,6 +28,7 @@
 - (void) resumeQueues;
 - (void) enqueueHandler: (TinyPromiseCompletion)handler in:(dispatch_queue_t)queue;
 - (TinyPromiseImmediate) immediateBlockForQueue: (dispatch_queue_t)queue;
+- (UInt32) pendingCompletionBlocks;
 @end
 
 @implementation TinyPromise
@@ -137,9 +142,17 @@
 
   [self resumeQueues];
   
-  if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 1000000000)) )
+  if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
   {
-    [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with active jobs. You're probably going to crash. %@", self];
+    NSLog(@"CRASH?!");
+    
+    //dispatch_group_wait is far from infallible when
+    //blocks may be added and/or destroyed on different
+    //threads.
+    if ( [self pendingCompletionBlocks] )
+    {
+      [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with active jobs. You're probably going to crash. %@", self];
+    }
   }
   
   if ( self.childPromises )
@@ -240,52 +253,76 @@
 
 - (void) enqueueHandler: (TinyPromiseCompletion)handler in:(dispatch_queue_t)queue
 {
-  dispatch_group_async(self.mainGroup, queue, ^
+  if ( self.state == kTinyPromiseStatePending )
   {
-    //There's no way to dequeue a block once it's been scheduled
-    //so just refrain from invoking the handlers to simulate
-    //cancelation.
-    BOOL invokeHandler = YES;
+    if ( queue == self.resolutionQueue ) self.resolutionManifest++;
+    if ( queue == self.rejectionQueue ) self.rejectionManifest++;
+    if ( queue == self.alwaysQueue ) self.alwaysManifest++;
+    if ( queue == self.deathQueue ) self.deathManifest++;
     
-    if ( self.state == kTinyPromiseStateUnknown )
+    dispatch_group_async(self.mainGroup, queue, ^
     {
-      invokeHandler = NO;
-    }
-    else
-    {
-      if ( queue == self.resolutionQueue && self.state != kTinyPromiseStateResolved )
-       invokeHandler = NO;
-
-      if ( queue == self.rejectionQueue && self.state != kTinyPromiseStateRejected )
-       invokeHandler = NO;
-
-      if ( queue == self.alwaysQueue && self.state != kTinyPromiseStateResolved && self.state != kTinyPromiseStateRejected )
-       invokeHandler = NO;
+      //There's no way to dequeue a block once it's been scheduled
+      //so just refrain from invoking the handlers to simulate
+      //cancelation.
+      BOOL invokeHandler = YES;
       
-      if ( queue == self.deathQueue && self.state < kTinyPromiseStateResolved )
-        invokeHandler = NO;
-    }
-    
-    if ( invokeHandler )
-    {
-      void (^invoker)(void) = ^{ handler(self); };
-      
-      //dispatch_get_main_queue will hang a unit test
-      BOOL runOnMainThread = YES;
-      
-      if ( [self respondsToSelector:NSSelectorFromString(@"testMode")] )
-        runOnMainThread = ![[self valueForKeyPath:@"testMode"] boolValue];
-      
-      if ( runOnMainThread )
+      if ( self.state == kTinyPromiseStateUnknown )
       {
-        dispatch_async(dispatch_get_main_queue(), invoker);
+        invokeHandler = NO;
       }
       else
       {
-        invoker();
+        if ( queue == self.resolutionQueue && self.state != kTinyPromiseStateResolved )
+         invokeHandler = NO;
+
+        if ( queue == self.rejectionQueue && self.state != kTinyPromiseStateRejected )
+         invokeHandler = NO;
+
+        if ( queue == self.alwaysQueue && self.state != kTinyPromiseStateResolved && self.state != kTinyPromiseStateRejected )
+         invokeHandler = NO;
+        
+        if ( queue == self.deathQueue && self.state < kTinyPromiseStateResolved )
+          invokeHandler = NO;
       }
-    }
-  });
+      
+      if ( queue == self.resolutionQueue ) self.resolutionManifest--;
+      if ( queue == self.rejectionQueue ) self.rejectionManifest--;
+      if ( queue == self.alwaysQueue ) self.alwaysManifest--;
+      if ( queue == self.deathQueue ) self.deathManifest--;
+      
+      if ( invokeHandler )
+      {
+        void (^invoker)(void) = ^{ handler(self); };
+        
+        //dispatch_get_main_queue will hang a unit test
+        BOOL runOnMainThread = YES;
+        
+        if ( [self respondsToSelector:NSSelectorFromString(@"testMode")] )
+          runOnMainThread = ![[self valueForKeyPath:@"testMode"] boolValue];
+        
+        if ( runOnMainThread )
+        {
+          dispatch_async(dispatch_get_main_queue(), invoker);
+        }
+        else
+        {
+          invoker();
+        }
+      }
+    });
+  }
+  else
+  {
+    NSLog(@"Boomage");
+  }
+}
+
+/* --- */
+
+- (UInt32) pendingCompletionBlocks
+{
+  return self.resolutionManifest + self.rejectionManifest + self.alwaysManifest + self.deathManifest;
 }
 
 /* --- */
