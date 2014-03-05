@@ -143,9 +143,7 @@
   [self resumeQueues];
   
   if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
-  {
-    NSLog(@"CRASH?!");
-    
+  {    
     //dispatch_group_wait is far from infallible when
     //blocks may be added and/or destroyed on different
     //threads.
