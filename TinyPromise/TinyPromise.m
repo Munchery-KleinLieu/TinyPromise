@@ -137,7 +137,7 @@
 
   [self resumeQueues];
   
-  if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
+  if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 1000000000)) )
   {
     [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with active jobs. You're probably going to crash. %@", self];
   }
