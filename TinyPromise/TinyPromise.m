@@ -339,28 +339,28 @@
 
 - (TinyPromiseImmediate) always
 {
-  return [self immediateBlockForQueue:self.alwaysQueue];
+  return [self immediateBlockForQueue: self.alwaysQueue];
 }
 
 /* --- */
 
 - (TinyPromiseImmediate) done
 {
-  return [self immediateBlockForQueue:self.resolutionQueue];
+  return [self immediateBlockForQueue: self.resolutionQueue];
 }
 
 /* --- */
 
 - (TinyPromiseImmediate) fail
 {
-  return [self immediateBlockForQueue:self.rejectionQueue];
+  return [self immediateBlockForQueue: self.rejectionQueue];
 }
 
 /* --- */
 
 - (TinyPromiseImmediate) death
 {
-  return [self immediateBlockForQueue:self.deathQueue];
+  return [self immediateBlockForQueue: self.deathQueue];
 }
 
 @end
