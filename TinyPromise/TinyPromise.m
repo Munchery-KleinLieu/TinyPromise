@@ -20,6 +20,8 @@
 @property (nonatomic) dispatch_queue_t            deathQueue;
 @property (atomic) UInt32                         deathManifest;
 
+@property (atomic, readonly) UInt32               pendingCompletionBlocks;
+
 @property BOOL                                    suspended;
 
 @property NSArray*                                childPromises;
@@ -28,7 +30,6 @@
 - (void) resumeQueues;
 - (void) enqueueHandler: (TinyPromiseCompletion)handler in:(dispatch_queue_t)queue;
 - (TinyPromiseImmediate) immediateBlockForQueue: (dispatch_queue_t)queue;
-- (UInt32) pendingCompletionBlocks;
 @end
 
 @implementation TinyPromise
@@ -146,7 +147,7 @@
   //blocks may be added and/or destroyed on different
   //threads. Only get GCD involved if it's genuinely
   //necessary to try and let something finish.
-  if ( [self pendingCompletionBlocks] )
+  if ( self.pendingCompletionBlocks )
   {
     if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
     {    
