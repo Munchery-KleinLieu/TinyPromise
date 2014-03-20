@@ -26,7 +26,7 @@ At its heart, **TinyPromise** is just a group of suspended operation queues with
 
 ### But... AFNetworking Has CALLBACKS!
 
-Sure it does. Can you register more than one callback per operation? Can you refrain from invoking those callbacks when contending with potentially recoverable errors--like auth token expiration? Will it invoke your callback immediately if a particular operation has already completed before you got around to asking? Can you get it to invoke one specific callback after multiple concurrent operations have completed? Can it be used to notify you when an embed segue's run or a transition has completed? 
+Sure it does. Can you register more than one callback per operation? Can you refrain from invoking those callbacks when contending with potentially recoverable errors--like auth token expiration? Will it invoke your callback immediately if a particular operation has already completed before you got around to asking? Can you get it to invoke one specific callback after multiple concurrent operations have completed? Can it be used to notify you when an embed segue's run or a transition has completed? Can it do **anything** at all without subclassing 30 different things to change two property values that it ultimately ignores anyway?
 
 You probably can do most of those things somehow, but your code will be an unreadable mess. If you like to keep things stuck in 1988 the way Apple does, go nuts. It all compiles down to the same thing eventually.
 
