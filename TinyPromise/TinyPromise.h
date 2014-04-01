@@ -15,7 +15,8 @@ typedef void (^ TinyPromiseImmediate)(TinyPromiseCompletion);
 
 @interface TinyPromise : NSObject
 @property (readonly) TinyPromiseState                   state;
-@property id                                            result;
+@property (nonatomic) id                                result;
+@property (nonatomic) id                                identifier;
 
 @property (readonly) BOOL                               isPending;
 @property (readonly) BOOL                               isResolved;
@@ -26,10 +27,15 @@ typedef void (^ TinyPromiseImmediate)(TinyPromiseCompletion);
 @property (nonatomic, readonly) TinyPromiseImmediate    fail;
 @property (nonatomic, readonly) TinyPromiseImmediate    death;
 
++ (TinyPromise*) promiseWithIdentifier: (id)identifier;
 + (TinyPromise*) when: (NSArray*)promises;
+
+- (TinyPromise*) initWithIdentifier: (id)identifier;
 - (void) resolveWith: (id)result;
 - (void) rejectWith: (id)result;
 - (void) reset;
 - (void) destroy;
 @end
+
+#define TracerPromise [TinyPromise promiseWithIdentifier: [NSString stringWithFormat: @"%@::%@ LINE %d", NSStringFromClass([self class]), NSStringFromSelector(_cmd), __LINE__]]
 

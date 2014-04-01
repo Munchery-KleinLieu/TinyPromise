@@ -34,9 +34,14 @@
 
 @implementation TinyPromise
 
++ (TinyPromise*) promiseWithIdentifier: (id)identifier
+{
+  return [[TinyPromise alloc] initWithIdentifier: identifier];
+}
+
 + (TinyPromise*) when:(NSArray*)promises
 {
-  __block TinyPromise *composite      = TinyPromise.new;
+  __block TinyPromise *composite      = TracerPromise;
   __block dispatch_queue_t whenQueue  = dispatch_queue_create("tinypromise.when", DISPATCH_QUEUE_SERIAL);
   
   //Don't let these die as long as we're waiting on them
@@ -104,19 +109,33 @@
   if ( self )
   {
     //Never suspended. Enforce order: done -> fail -> always
-    self.mainQueue        = dispatch_queue_create("tinypromise.callbacks", DISPATCH_QUEUE_SERIAL);
-    self.mainGroup        = dispatch_group_create();
+    _mainQueue        = dispatch_queue_create("tinypromise.callbacks", DISPATCH_QUEUE_SERIAL);
+    _mainGroup        = dispatch_group_create();
     
     //Suspended until resolved/rejected/destroyed. Absolutely no order whatsoever.
-    self.resolutionQueue  = dispatch_queue_create("tinypromise.resolution", DISPATCH_QUEUE_CONCURRENT);
-    self.rejectionQueue   = dispatch_queue_create("tinypromise.rejection", DISPATCH_QUEUE_CONCURRENT);
-    self.alwaysQueue      = dispatch_queue_create("tinypromise.always", DISPATCH_QUEUE_CONCURRENT);
-    self.deathQueue       = dispatch_queue_create("tinypromise.death", DISPATCH_QUEUE_CONCURRENT);
+    _resolutionQueue  = dispatch_queue_create("tinypromise.resolution", DISPATCH_QUEUE_CONCURRENT);
+    _rejectionQueue   = dispatch_queue_create("tinypromise.rejection", DISPATCH_QUEUE_CONCURRENT);
+    _alwaysQueue      = dispatch_queue_create("tinypromise.always", DISPATCH_QUEUE_CONCURRENT);
+    _deathQueue       = dispatch_queue_create("tinypromise.death", DISPATCH_QUEUE_CONCURRENT);
     
-    self.childPromises    = nil;
+    _childPromises    = nil;
     
     [self reset];
   }
+  return self;
+}
+
+/* --- */
+
+- (id) initWithIdentifier: (id) identifier
+{
+  self = [self init];
+  
+  if ( self )
+  {
+    _identifier = identifier;
+  }
+  
   return self;
 }
 
@@ -153,7 +172,7 @@
     {
       if ( self.pendingCompletionBlocks )
       {
-        [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with %d active jobs. You're probably going to crash. %@", (unsigned int)self.pendingCompletionBlocks, self];
+        [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with %d active jobs. You're probably going to crash. %@", (unsigned int)self.pendingCompletionBlocks, self.identifier ? self.identifier : self];
       }
     }
   }
