@@ -150,8 +150,11 @@
   if ( self.pendingCompletionBlocks )
   {
     if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
-    {    
-      [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with active jobs. You're probably going to crash. %@", self];
+    {
+      if ( self.pendingCompletionBlocks )
+      {
+        [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with %d active jobs. You're probably going to crash. %@", (unsigned int)self.pendingCompletionBlocks, self];
+      }
     }
   }
   
