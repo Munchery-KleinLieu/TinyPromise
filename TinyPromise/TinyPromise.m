@@ -39,6 +39,8 @@
   return [[TinyPromise alloc] initWithIdentifier: identifier];
 }
 
+/* --- */
+
 + (TinyPromise*) when:(NSArray*)promises
 {
   __block TinyPromise *composite      = TracerPromise;
