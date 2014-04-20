@@ -174,7 +174,8 @@
     {
       if ( self.pendingCompletionBlocks )
       {
-        [NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with %d active jobs. You're probably going to crash. %@", (unsigned int)self.pendingCompletionBlocks, self.identifier ? self.identifier : self];
+        NSLog(@"Deallocating a TinyPromise with %d active jobs. You're probably going to crash. %@", (unsigned int)self.pendingCompletionBlocks, self.identifier ? self.identifier : self);
+        //[NSException raise:@"TinyPromiseZombie" format:@"Deallocating a TinyPromise with %d active jobs. You're probably going to crash. %@", (unsigned int)self.pendingCompletionBlocks, self.identifier ? self.identifier : self];
       }
     }
   }
