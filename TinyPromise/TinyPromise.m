@@ -20,6 +20,7 @@
 @property (nonatomic) dispatch_queue_t            deathQueue;
 @property (atomic) UInt32                         deathManifest;
 
+@property (atomic) UInt32                         totalCompletionBlocksQueuedOverTime;
 @property (atomic, readonly) UInt32               pendingCompletionBlocks;
 
 @property BOOL                                    suspended;
@@ -168,7 +169,7 @@
   //blocks may be added and/or destroyed on different
   //threads. Only get GCD involved if it's genuinely
   //necessary to try and let something finish.
-  if ( self.pendingCompletionBlocks )
+  if ( self.pendingCompletionBlocks || self.totalCompletionBlocksQueuedOverTime == 0 )
   {
     if ( dispatch_group_wait(self.mainGroup, dispatch_time(DISPATCH_TIME_NOW, 5000000000)) )
     {
@@ -282,6 +283,8 @@
   else if ( queue == self.rejectionQueue ) self.rejectionManifest++;
   else if ( queue == self.alwaysQueue ) self.alwaysManifest++;
   else if ( queue == self.deathQueue ) self.deathManifest++;
+  
+  self.totalCompletionBlocksQueuedOverTime++;
   
   dispatch_group_async(self.mainGroup, queue, ^
   {
