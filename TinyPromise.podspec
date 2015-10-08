@@ -75,7 +75,7 @@ Pod::Spec.new do |s|
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  s.source       = { :git => "https://github.com/khiltd/TinyPromise.git", :commit => "c4432544c3dd4610d6eff72f5d07bf72787a8b71" }
+  s.source       = { :git => "https://github.com/Munchery-KleinLieu/TinyPromise.git", :tag => "1.0.0" }
 
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
